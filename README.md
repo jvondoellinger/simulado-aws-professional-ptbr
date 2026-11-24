@@ -9,6 +9,9 @@ Baixe o repositório e abra `index.html` diretamente no navegador. Não é neces
 - Busca nas questões e alternativas.
 - Navegação por número da questão.
 - Marcação de alternativas, com persistência local no navegador.
+- Botão **Confirmar resposta** em cada questão, com correção automática e gabarito.
+- Contagem de acertos e questões confirmadas, com persistência local.
+- Questões de múltipla seleção exigem todas as alternativas corretas, sem alternativas extras.
 - Original em inglês disponível para conferência.
 - Impressão ou exportação para PDF pelo navegador.
 - Layout adaptado para celular e computador.
@@ -17,4 +20,4 @@ Baixe o repositório e abra `index.html` diretamente no navegador. Não é neces
 
 Questões provenientes do teste de prática do Tutorials Dojo. A tradução é automática; os nomes dos serviços AWS foram preservados. Consulte o original em inglês para conferir termos e interpretações.
 
-As marcações são locais e não são enviadas ao Tutorials Dojo. Esta versão serve para leitura e estudo e não corrige as respostas.
+As marcações são locais e não são enviadas ao Tutorials Dojo. A correção usa os gabaritos capturados do resultado do teste original. Alterar uma escolha limpa a correção daquela questão até uma nova confirmação.
