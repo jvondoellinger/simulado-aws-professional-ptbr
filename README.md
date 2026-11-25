@@ -1,14 +1,14 @@
 # Simulados AWS Professional em pt-BR
 
-16 testes de estudo do AWS Certified Solutions Architect Professional, com **370 questões únicas**, gabaritos e explicações completas traduzidos automaticamente para português brasileiro.
+22 testes de estudo do AWS Certified Solutions Architect Professional, com **830 questões únicas** em seis plataformas. Enunciados, alternativas, explicações disponíveis e imagens estão traduzidos para português brasileiro. Quatro questões do SaveMyCert não têm gabarito na captura e ficam fora da nota.
 
 ## Como usar
 
-Baixe o ZIP do repositório, extraia a pasta e abra `index.html` no navegador. Mantenha os arquivos e a pasta `assets` juntos. Não é necessário instalar dependências ou iniciar um servidor.
+Baixe `index.html` e abra o arquivo no navegador. O HTML incorpora os dados, estilos, scripts e imagens e funciona sozinho, sem dependências ou servidor.
 
 ## Recursos
 
-- Seletor de testes 1 a 16, com o teste original de 75 questões preservado.
+- Seletor de seis plataformas e 22 testes, com os 16 testes do Tutorials Dojo preservados.
 - Remoção global de repetições: cada questão permanece apenas no primeiro teste em que apareceu.
 - Enunciados, alternativas e explicações em pt-BR, com os originais em inglês disponíveis.
 - Botão **Confirmar resposta** por questão, com gabarito, destaque das alternativas e explicação automática.
@@ -26,7 +26,7 @@ Baixe o ZIP do repositório, extraia a pasta e abra `index.html` no navegador. M
 
 Use **Importar pacote local de questões (JSON)** para adicionar um pacote com `tests`, `questions` e `images`. O aplicativo processa o arquivo no navegador e não o envia a um servidor. A importação preserva os 16 testes existentes e evita duplicar os mesmos identificadores. Pacotes podem conter questões `single`, `multi`, `order` e `match`; imagens devem estar incorporadas como data URI ou na pasta `assets`.
 
-Os pacotes pessoais e as capturas de rede não fazem parte deste repositório. A edição pessoal em arquivo HTML pode incorporar esses pacotes para uso sem importação. Os cronômetros continuam separados por teste.
+O HTML já incorpora os conjuntos de Tutorials Dojo (370), Certicab (200), CertOcean (150), ExamPark (75), SaveMyCert (15) e AWS Skill Builder (20). As capturas brutas de rede não fazem parte do repositório. Os cronômetros continuam separados por teste.
 
 ## Organização das questões
 
@@ -34,7 +34,9 @@ As 16 tentativas originais têm 75 questões cada. Foram removidas 830 ocorrênc
 
 ## Arquivos
 
-- `index.html`: estrutura da página.
+- `index.html`: edição completa e autossuficiente, com 830 questões e imagens incorporadas.
+
+Os arquivos abaixo são as fontes auxiliares da versão modular anterior; a edição completa é `index.html`.
 - `styles.css`: estilos e impressão.
 - `app.js`: seleção de teste, correção, explicações, persistência e cronômetros.
 - `data-import.js`: validação, combinação e armazenamento local de pacotes.
@@ -43,4 +45,4 @@ As 16 tentativas originais têm 75 questões cada. Foram removidas 830 ocorrênc
 
 ## Conteúdo e traduções
 
-Conteúdo proveniente dos testes de prática do Tutorials Dojo. Os nomes dos serviços AWS e trechos de código foram preservados. As traduções são automáticas; o OCR pode reconhecer incorretamente texto pequeno, e os originais estão disponíveis para conferência. As marcações são locais e não são enviadas ao Tutorials Dojo.
+Conteúdo proveniente dos testes de prática de Tutorials Dojo, Certicab, CertOcean, ExamPark, SaveMyCert e AWS Skill Builder. Os nomes dos serviços AWS e trechos de código foram preservados. As traduções são automáticas; o OCR pode reconhecer incorretamente texto pequeno, e os originais estão disponíveis para conferência. As marcações são locais e não são enviadas ao Tutorials Dojo.
