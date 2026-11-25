@@ -1,6 +1,7 @@
-(() => {
+(async () => {
   'use strict';
-  const bank = window.QUIZ_DATA;
+  let packs = await window.LOCAL_QUIZ_PACKS.load();
+  let bank = window.LOCAL_QUIZ_PACKS.merge(window.QUIZ_DATA, packs);
   const storageKey = 'td-aws-professional-ptbr-v2';
   const $ = selector => document.querySelector(selector);
   const node = (tag, className, text) => {
@@ -16,7 +17,8 @@
   const state = { activeTest: Number(saved.activeTest) || 1, tests: saved.tests && typeof saved.tests === 'object' ? saved.tests : {} };
   if (!bank.tests.some(t => t.id === state.activeTest)) state.activeTest = 1;
   const equal = (a, b) => Array.isArray(a) && a.length === b.length && a.every((v, i) => v === b[i]);
-  const expected = q => q.options.flatMap((o, i) => o.correct ? [String(i)] : []);
+  const interactive = q => ['order', 'match'].includes(q.kind);
+  const expected = q => interactive(q) ? q.correctSequence : q.options.flatMap((o, i) => o.correct ? [String(i)] : []);
   function testState(id) {
     const raw = state.tests[id] || {};
     const clock = raw.clock || {};
@@ -64,6 +66,7 @@
   function selections(id) {
     const q = bank.questions[id];
     const values = state.tests[active.id].answers[id];
+    if (interactive(q)) return Array.isArray(values) && values.some(Boolean) ? values.map(String) : [];
     return Array.isArray(values) ? [...new Set(values.map(String).filter(v => /^\d+$/.test(v) && Number(v) < q.options.length))].sort((a, b) => Number(a) - Number(b)) : [];
   }
   function confirmed(id) { return selections(id).length > 0 && equal(state.tests[active.id].confirmed[id], selections(id)); }
@@ -71,9 +74,10 @@
     const ids = active.questionIds;
     const marked = ids.filter(id => selections(id).length).length;
     const checked = ids.filter(confirmed);
-    const correct = checked.filter(id => equal(selections(id), expected(bank.questions[id]))).length;
+    const graded = checked.filter(id => bank.questions[id].gradingAvailable !== false);
+    const correct = graded.filter(id => equal(selections(id), expected(bank.questions[id]))).length;
     $('#answered').textContent = marked + ' de ' + ids.length + ' respondidas';
-    $('#score').textContent = correct + (correct === 1 ? ' acerto em ' : ' acertos em ') + checked.length + (checked.length === 1 ? ' confirmada' : ' confirmadas');
+    $('#score').textContent = correct + (correct === 1 ? ' acerto em ' : ' acertos em ') + graded.length + ' corrigidas' + (checked.length > graded.length ? ' · ' + (checked.length - graded.length) + ' sem gabarito' : '');
     $('#progress').value = checked.length;
     $('#progress').max = Math.max(1, ids.length);
   }
@@ -121,10 +125,13 @@
   function showGrade(card, q) {
     const picked = selections(q.id), keys = expected(q);
     const feedback = card.querySelector('.feedback');
-    if (!picked.length) { feedback.className = 'feedback warning'; feedback.textContent = 'Selecione uma alternativa antes de confirmar.'; return false; }
-    const correct = equal(picked, keys);
-    feedback.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
-    feedback.textContent = (correct ? 'Resposta correta! ' : 'Resposta incorreta. ') + 'Gabarito: ' + keys.map(i => String.fromCharCode(65 + Number(i))).join(', ') + '.';
+    if (!picked.length || (interactive(q) && (picked.length !== expected(q).length || picked.includes('') || (q.kind === 'order' && new Set(picked).size !== picked.length)))) { feedback.className = 'feedback warning'; feedback.textContent = 'Complete a resposta antes de confirmar. Na ordenação, use cada item uma vez.'; return false; }
+    const available = q.gradingAvailable !== false;
+    const correct = available && equal(picked, keys);
+    feedback.className = 'feedback ' + (!available ? 'warning' : correct ? 'correct' : 'incorrect');
+    const keyText = interactive(q) ? keys.map((id, i) => (q.kind === 'match' ? q.leftItems[i].textPt : String(i + 1)) + ' → ' + (q.kind === 'match' ? q.rightItems : q.items).find(item => item.id === id)?.textPt).join('; ') : keys.map(i => String.fromCharCode(65 + Number(i))).join(', ');
+    feedback.textContent = available ? (correct ? 'Resposta correta! ' : 'Resposta incorreta. ') + 'Gabarito: ' + keyText + '.' : 'Resposta registrada. Gabarito e explicação não recebidos nesta captura; esta questão não entra na nota.';
+    card.querySelectorAll('.interactive-row').forEach((row, i) => { row.classList.toggle('is-correct', available && picked[i] === keys[i]); row.classList.toggle('is-incorrect', available && picked[i] !== keys[i]); });
     card.dataset.confirmed = 'true';
     card.querySelectorAll('fieldset input').forEach(input => {
       const label = input.closest('.option');
@@ -133,7 +140,7 @@
     });
     if (!card.querySelector('.explanation')) {
       const explanation = node('section', 'explanation'); explanation.setAttribute('aria-label', 'Explicação da resposta');
-      explanation.append(node('h3', '', 'Explicação da resposta'), renderBlocks(q.explanationBlocks));
+      explanation.append(node('h3', '', 'Explicação da resposta'), q.explanationBlocks.length ? renderBlocks(q.explanationBlocks) : node('p', '', 'Explicação não recebida nesta captura.'));
       const original = node('details', 'original'); original.lang = 'en';
       original.append(node('summary', '', 'Ver explicação original em inglês'), renderBlocks(q.explanationBlocks, true));
       explanation.append(original); card.querySelector('form').after(explanation);
@@ -144,12 +151,29 @@
     const q = bank.questions[id], card = node('section', 'question'); card.id = 'q' + (index + 1); card.dataset.questionId = id;
     const title = node('div', 'question-title'); const heading = node('h2', '', 'Questão ' + String(index + 1).padStart(2, '0')); heading.id = card.id + '-title';
     card.setAttribute('aria-labelledby', heading.id);
-    title.append(heading, node('span', 'kind', q.multiple ? 'Múltipla seleção' : 'Resposta única')); card.append(title);
+    title.append(heading, node('span', 'kind', q.kind === 'order' ? 'Ordenação' : q.kind === 'match' ? 'Associação' : q.multiple ? 'Múltipla seleção' : 'Resposta única')); card.append(title);
     const statement = node('div', 'statement');
     if (q.questionBlocks.some(b => b.type !== 'text')) statement.append(renderBlocks(q.questionBlocks));
     else for (const p of q.questionPt.split(/\n\s*\n/)) statement.append(node('p', '', p));
     card.append(statement);
     const form = node('form', 'answer-form'), fieldset = node('fieldset'); fieldset.append(node('legend', 'sr-only', 'Alternativas da questão ' + (index + 1)));
+    if (interactive(q)) {
+      const rows = q.kind === 'match' ? q.leftItems : q.items;
+      const choices = q.kind === 'match' ? q.rightItems : q.items;
+      rows.forEach((item, i) => {
+        const label = node('label', 'option interactive-row');
+        label.append(node('span', '', q.kind === 'match' ? item.textPt : 'Posição ' + (i + 1)));
+        const select = node('select'); select.setAttribute('aria-label', q.kind === 'match' ? item.textPt : 'Posição ' + (i + 1));
+        const placeholder = node('option', '', 'Selecionar'); placeholder.value = ''; select.append(placeholder);
+        [...choices].sort((a, b) => a.textPt.localeCompare(b.textPt, 'pt-BR')).forEach(choice => { const option = node('option', '', choice.textPt); option.value = choice.id; select.append(option); });
+        select.value = selections(id)[i] || '';
+        select.addEventListener('change', () => {
+          const ts = state.tests[active.id]; ts.answers[id] = [...fieldset.querySelectorAll('select')].map(el => el.value); delete ts.confirmed[id]; clearFeedback(card);
+          if (!ts.clock.startedAt && ts.clock.elapsedMs === 0) startClock(); persist(); updateProgress();
+        });
+        label.append(select); fieldset.append(label);
+      });
+    }
     q.options.forEach((option, i) => {
       const label = node('label', 'option'), input = node('input'); input.type = q.multiple ? 'checkbox' : 'radio'; input.name = id; input.value = String(i); input.checked = selections(id).includes(input.value);
       input.setAttribute('aria-label', 'Alternativa ' + String.fromCharCode(65 + i));
@@ -173,6 +197,13 @@
     const original = node('details', 'original-question'); original.append(node('summary', '', 'Ver questão original em inglês'));
     const en = node('div', 'original'); en.lang = 'en'; en.append(node('p', '', q.questionEn));
     const list = node('ol'); list.type = 'A'; q.options.forEach(o => list.append(node('li', '', o.textEn))); en.append(list); original.append(en); card.append(original);
+    if (interactive(q)) {
+      for (const items of q.kind === 'order' ? [q.items] : [q.leftItems, q.rightItems]) {
+        const originalItems = node('ul');
+        [...items].sort((a, b) => a.textEn.localeCompare(b.textEn)).forEach(item => originalItems.append(node('li', '', item.textEn)));
+        en.append(originalItems);
+      }
+    }
     if (confirmed(id)) showGrade(card, q);
     return card;
   }
@@ -189,13 +220,36 @@
   function render() {
     $('#test-select').value = String(active.id);
     $('#test-title').textContent = active.title;
-    $('#test-description').textContent = active.questionIds.length + ' questões únicas' + (active.duplicatesRemoved ? ' · ' + active.duplicatesRemoved + ' repetições removidas desta tentativa' : ' · teste original preservado');
+    $('#test-description').textContent = active.questionIds.length + ' questões únicas' + (active.duplicatesRemoved ? ' · ' + active.duplicatesRemoved + ' repetições removidas desta tentativa' : '');
     $('#search').value = ''; $('#questions').replaceChildren(...active.questionIds.map(makeCard));
     $('#jump').replaceChildren(node('option', '', 'Selecionar')); $('#jump').firstChild.value = '';
     active.questionIds.forEach((_, i) => { const option = node('option', '', String(i + 1).padStart(2, '0')); option.value = 'q' + (i + 1); $('#jump').append(option); });
     filter(); updateProgress(); updateClock(); persist();
   }
-  for (const test of bank.tests) { const option = node('option', '', test.title + ' · ' + test.questionIds.length + ' questões'); option.value = String(test.id); $('#test-select').append(option); }
+  function refreshPickers() {
+    const platforms = [...new Set(bank.tests.map(t => t.platform))];
+    $('#provider-select').replaceChildren(...platforms.map(platform => { const option = node('option', '', platform); option.value = platform; return option; }));
+    $('#provider-select').value = active.platform;
+    $('#test-select').replaceChildren(...bank.tests.filter(t => t.platform === active.platform).map(test => { const option = node('option', '', test.title + ' · ' + test.questionIds.length + ' questões'); option.value = String(test.id); return option; }));
+    $('#bank-count').textContent = platforms.length + ' plataformas · ' + bank.tests.length + ' testes · ' + Object.keys(bank.questions).length + ' questões';
+  }
+  $('#provider-select').addEventListener('change', event => {
+    pauseClock(active.id); active = bank.tests.find(t => t.platform === event.target.value); state.activeTest = active.id; refreshPickers(); render();
+  });
+  $('#import-file').addEventListener('change', async event => {
+    try {
+      const file = event.target.files[0]; if (!file) return;
+      const pack = window.LOCAL_QUIZ_PACKS.validate(JSON.parse(await file.text()));
+      const nextPacks = [...packs, pack], nextBank = window.LOCAL_QUIZ_PACKS.merge(window.QUIZ_DATA, nextPacks);
+      pauseClock(active.id); packs = nextPacks; bank = nextBank; bank.tests.forEach(t => testState(t.id));
+      active = bank.tests.find(t => t.platform === pack.tests[0].platform) || bank.tests[0]; state.activeTest = active.id;
+      let message = 'Arquivo importado neste navegador.';
+      try { await window.LOCAL_QUIZ_PACKS.save(packs); } catch { message += ' O navegador não permitiu salvar o pacote; importe novamente na próxima abertura.'; }
+      refreshPickers(); render(); $('#import-status').textContent = message;
+    } catch (error) { $('#import-status').textContent = 'Não foi possível importar: ' + error.message; }
+    event.target.value = '';
+  });
+  refreshPickers();
   $('#test-select').addEventListener('change', event => {
     pauseClock(active.id); state.activeTest = Number(event.target.value); active = bank.tests.find(t => t.id === state.activeTest);
     render(); window.scrollTo({ top: 0, behavior: 'instant' });

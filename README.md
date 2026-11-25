@@ -18,6 +18,15 @@ Baixe o ZIP do repositório, extraia a pasta e abra `index.html` no navegador. M
 - Respostas, confirmações e tempos persistidos localmente no navegador.
 - Imagens incluídas localmente, com textos traduzidos dentro dos diagramas por OCR e substituição programática. Os originais também estão disponíveis.
 - Busca, navegação por questão, impressão e layout responsivo.
+- Seletor de plataforma e importação local de pacotes JSON, armazenados em IndexedDB neste navegador.
+- Questões de associação e ordenação com correção pela sequência completa.
+- Questões importadas sem gabarito são identificadas e excluídas da nota.
+
+## Importação local
+
+Use **Importar pacote local de questões (JSON)** para adicionar um pacote com `tests`, `questions` e `images`. O aplicativo processa o arquivo no navegador e não o envia a um servidor. A importação preserva os 16 testes existentes e evita duplicar os mesmos identificadores. Pacotes podem conter questões `single`, `multi`, `order` e `match`; imagens devem estar incorporadas como data URI ou na pasta `assets`.
+
+Os pacotes pessoais e as capturas de rede não fazem parte deste repositório. A edição pessoal em arquivo HTML pode incorporar esses pacotes para uso sem importação. Os cronômetros continuam separados por teste.
 
 ## Organização das questões
 
@@ -28,6 +37,7 @@ As 16 tentativas originais têm 75 questões cada. Foram removidas 830 ocorrênc
 - `index.html`: estrutura da página.
 - `styles.css`: estilos e impressão.
 - `app.js`: seleção de teste, correção, explicações, persistência e cronômetros.
+- `data-import.js`: validação, combinação e armazenamento local de pacotes.
 - `data/bank.js`: conteúdo dos testes, traduções e gabaritos.
 - `assets/images/`: diagramas traduzidos e imagens originais.
 

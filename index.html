@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><link rel="icon" href="data:,">
 <title>Simulados AWS Professional em pt-BR</title>
 <link rel="stylesheet" href="styles.css">
-<script defer src="data/bank.js"></script><script defer src="app.js"></script>
+<script defer src="data/bank.js"></script><script defer src="data-import.js"></script><script defer src="app.js"></script>
 </head>
 <body>
 <header>
@@ -12,7 +12,8 @@
 <h1>Simulados em português brasileiro</h1>
 <p class="intro" id="bank-count">16 testes para leitura e estudo.</p>
 <p class="note">Cada questão aparece em apenas um teste. Traduções de texto e imagens são automáticas; os originais em inglês ficam disponíveis para conferência.</p>
-<div class="test-controls">
+<div class="import-controls"><label for="import-file">Importar pacote local de questões (JSON)</label><input id="import-file" type="file" accept=".json,application/json"><p id="import-status" role="status">O arquivo permanece neste navegador.</p></div>
+<div class="test-controls"><div class="test-picker"><label class="field-label" for="provider-select">Plataforma</label><select id="provider-select"></select></div>
 <div class="test-picker"><label class="field-label" for="test-select">Escolha o teste</label><select id="test-select"></select></div>
 <div class="timer"><div class="timer-top"><div><span class="field-label">Cronômetro deste teste</span><output id="clock" aria-label="Tempo decorrido" aria-live="off">00:00:00</output></div><span id="timer-status">Pronto para iniciar</span></div><div class="timer-actions"><button id="timer-toggle" type="button">Iniciar</button><button id="timer-reset" type="button">Zerar cronômetro</button></div></div>
 </div>
